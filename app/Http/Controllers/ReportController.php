@@ -27,45 +27,29 @@ class ReportController extends Controller
 
     public function store(Request $request)
     {
-        $hairType = strtolower(str_replace(' ', '_', $request->input('hair_type')));
-        $faceShape = strtolower(str_replace(' ', '_', $request->input('face_shape')));
-        $activity = strtolower(str_replace(' ', '_', $request->input('activity')));
-
         $hairTypeId = HairType::where('nama', $request->input('hair_type'))->first()?->id;
         $faceShapeId = FaceShape::where('nama', $request->input('face_shape'))->first()?->id;
         $activityId = Activity::where('nama', $request->input('activity'))->first()?->id;
 
-
-        $rule = Rule::where('hair_type_id', $hairTypeId ?? 0)
-                ->where('face_shape_id', $faceShapeId ?? 0)
-                ->where('activity_id', $activityId ?? 0)
-                ->first();
-
-        if (!$rule) {
-            return back()->with('error', 'Kombinasi rule tidak ditemukan di database.');
+        if (!$hairTypeId || !$faceShapeId || !$activityId) {
+            return back()->with('error', 'Data input tidak valid.');
         }
 
-
-        $filePath = storage_path('app/facts/rules.pl');
-        $command = "swipl -s {$filePath} -g \"findall(Style, (hair_type('$hairType'), face_shape('$faceShape'), activity('$activity'), hair_style(Style)), Styles), writeln(Styles), halt.\"";
-        $output = shell_exec($command);
-
-        $output = trim($output, "[] \n"); 
-        $styles = array_map(function($style) {
-            return ucwords(str_replace('_', ' ', trim($style, "' ")));
-        }, explode(',', $output));
-
-        $hairStyles = HairStyle::whereIn('nama', $styles)->get();
-
-        $rules = Rule::where('hair_type_id', $hairTypeId ?? 0)
-            ->where('face_shape_id', $faceShapeId ?? 0)
-            ->where('activity_id', $activityId ?? 0)
+        $rules = Rule::where('hair_type_id', $hairTypeId)
+            ->where('face_shape_id', $faceShapeId)
+            ->where('activity_id', $activityId)
             ->get();
 
         if ($rules->isEmpty()) {
             return back()->with('error', 'Kombinasi rule tidak ditemukan di database.');
         }
 
+        // Ambil rekomendasi gaya rambut dari relasi hairStyle
+        $hairStyles = $rules->map(function ($rule) {
+            return $rule->hairStyle;
+        });
+
+        // Simpan ke laporan
         foreach ($rules as $rule) {
             Report::create([
                 'nama_user' => $request->input('nama'),
