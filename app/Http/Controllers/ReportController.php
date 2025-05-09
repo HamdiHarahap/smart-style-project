@@ -32,7 +32,7 @@ class ReportController extends Controller
         $activityId = Activity::where('nama', $request->input('activity'))->first()?->id;
 
         if (!$hairTypeId || !$faceShapeId || !$activityId) {
-            return back()->with('error', 'Data input tidak valid.');
+            return view('pages.rekomendasi')->with('error', 'Data input tidak valid.');
         }
 
         $rules = Rule::where('hair_type_id', $hairTypeId)
@@ -41,15 +41,13 @@ class ReportController extends Controller
             ->get();
 
         if ($rules->isEmpty()) {
-            return back()->with('error', 'Kombinasi rule tidak ditemukan di database.');
+            return view('pages.rekomendasi')->with('error', 'Hair style reccommendation not found');
         }
 
-        // Ambil rekomendasi gaya rambut dari relasi hairStyle
         $hairStyles = $rules->map(function ($rule) {
             return $rule->hairStyle;
         });
 
-        // Simpan ke laporan
         foreach ($rules as $rule) {
             Report::create([
                 'nama_user' => $request->input('nama'),

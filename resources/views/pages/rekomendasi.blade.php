@@ -5,13 +5,17 @@
 
             @if (empty($nama) || empty($email) || empty($hair_style))
                 <div class="text-center text-lg text-gray-700">
-                    <p>No recommendations found. Please complete the form first.</p>
+                    <p>No recommendations found</p>
                 </div>
             @else
                 <div class="mb-10 space-y-2 text-center text-lg text-gray-700">
                     <p><span class="font-semibold text-gray-800">Name:</span> {{ $nama }}</p>
                     <p><span class="font-semibold text-gray-800">Email:</span> {{ $email }}</p>
                 </div>
+
+                @if (session('error'))
+                    <p class="font-semibold text-xl text-red-500">{{session('error')}}</p>
+                @endif
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
                     @foreach ($hair_style as $item)
